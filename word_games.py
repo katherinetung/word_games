@@ -7,6 +7,8 @@
 
 #You stop playing as soon as you make a word that is at least MIN_WL letters long
 
+from anytree import Node, RenderTree
+
 #minimum word length
 MIN_WL = 4
 
@@ -29,35 +31,67 @@ Prune list to obtain all reachable words:
 Not assuming that word_list is sorted
 """
 def prune(word_list):
-    mydict = {}
+    my_dict = {}
     for word in word_list:
         if len(word) >= MIN_WL:
-            mydict[word] = 0
+            my_dict[word] = 0
     pruned_list = []
-    for word in mydict:
+    for word in my_dict:
         for i in range(MIN_WL, len(word)):
-            if word[:i] in mydict:
-                mydict[word]=-1
-        if mydict[word] == 0:
+            if word[:i] in my_dict:
+                my_dict[word]=-1
+        if my_dict[word] == 0:
             pruned_list.append(word)
     pruned_list.sort()
     return pruned_list
 
 """
-Let users play game. Identifies winner. TODO: catch fake words.
+Generates all valid prefixes.
 """
-def ghost(pruned_list):
+def prefixes(pruned_list):
+    prefix_set = set()
+    for word in pruned_list:
+        for i in range(len(word)+1):
+            prefix_set.add(word[:i])
+    prefix_list=list(prefix_set)
+    prefix_list.sort()
+    return prefix_list
+
+"""
+Get letters from players to build word. If player gives invalid input, allow
+the player another attempt to get it right.
+"""
+def get_letter(current_prefix, curr_player, prefix_list):
+    while True:
+        letter = input("Player " + str(curr_player) +
+        ", type a letter: ")
+        if len(letter) == 1:
+            candidate = current_prefix + letter
+            if candidate not in prefix_list:
+                print(candidate + " is not a valid prefix. Try again.")
+            else:
+                print("The word so far is " + candidate)
+                return letter
+        else:
+            print("Enter a single uppercase letter. Try again.")
+
+"""
+Let users play game. Identify current player and winner.
+"""
+def ghost(pruned_list, prefix_list):
     curr_player=1
-    build_word = input("Player " + str(curr_player) + ", type a letter: ")
+    build_word = get_letter("", curr_player, prefix_list)
     while build_word not in pruned_list:
         curr_player+=1
-        build_word += input("Player " + str(curr_player) + ", type a letter: ")
+        build_word += get_letter(build_word, curr_player, prefix_list)
         if curr_player == 2:
             curr_player = 0
+    curr_player+=1
     if curr_player == 0:
         curr_player = 2
     print(build_word)
     print("Winner: Player " + str(curr_player))
+
 
 
 # Called from command line like "word_games.py scrabble.txt"
@@ -65,6 +99,7 @@ if __name__ == '__main__':
   scrabble_dict_path = "/Users/katherinetung/word_games/scrabble.txt"
   all_words = LoadWords(scrabble_dict_path)
   pruned_words=prune(all_words)
-  ghost(pruned_words)
+  prefix_words=prefixes(pruned_words)
+  ghost(pruned_words, prefix_words)
 
 
